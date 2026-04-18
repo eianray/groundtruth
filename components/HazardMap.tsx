@@ -30,7 +30,7 @@ export default function HazardMap({ location, onPositionChange }: HazardMapProps
         const marker = L.marker([location.lat, location.lon], { draggable: true }).addTo(map);
         marker.on('dragend', () => { const p = marker.getLatLng(); onPositionChange(p.lat, p.lng); });
         markerRef.current = marker;
-        map.flyTo([location.lat, location.lon], 15);
+        map.flyTo([location.lat, location.lon], 17);
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -41,12 +41,12 @@ export default function HazardMap({ location, onPositionChange }: HazardMapProps
     import('leaflet').then((L) => {
       if (markerRef.current) {
         markerRef.current.setLatLng([location.lat, location.lon]);
-        mapInstanceRef.current!.flyTo([location.lat, location.lon], 15);
+        mapInstanceRef.current!.flyTo([location.lat, location.lon], 17);
       } else {
         const marker = L.marker([location.lat, location.lon], { draggable: true }).addTo(mapInstanceRef.current!);
         marker.on('dragend', () => { const p = marker.getLatLng(); onPositionChange(p.lat, p.lng); });
         markerRef.current = marker;
-        mapInstanceRef.current!.flyTo([location.lat, location.lon], 15);
+        mapInstanceRef.current!.flyTo([location.lat, location.lon], 17);
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
