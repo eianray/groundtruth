@@ -21,7 +21,7 @@ export default function SearchBar({ onLocationSelect }: SearchBarProps) {
         setResults(data);
         setShow(data.length > 0);
       } catch { setResults([]); setShow(false); }
-    }, 500);
+    }, 300);
   };
 
   return (
