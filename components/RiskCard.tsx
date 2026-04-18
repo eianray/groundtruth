@@ -125,7 +125,7 @@ export default function RiskCard({ result, isLoading, address }: RiskCardProps) 
         <div style={{ fontWeight: 500, color: 'var(--text-primary)', marginBottom: '2px' }}>
           {address.split(',').slice(0, 2).join(',')}
         </div>
-        {county && state && <div>{county} County, {state}</div>}
+        {county && state && <div>{county}{county.includes('County') ? '' : ' County'}, {state}</div>}
       </div>
 
       {/* Hazard Rows */}
@@ -138,17 +138,17 @@ export default function RiskCard({ result, isLoading, address }: RiskCardProps) 
         <HazardRow
           hazard="wildfire" label="Wildfire"
           score={hazards.wildfire.score} level={hazards.wildfire.level}
-          source="" dataAvailable={false}
+          source={hazards.wildfire.source} dataAvailable={hazards.wildfire.dataAvailable}
         />
         <HazardRow
           hazard="earthquake" label="Earthquake"
           score={hazards.earthquake.score} level={hazards.earthquake.level}
-          source="" dataAvailable={false}
+          source={hazards.earthquake.source} dataAvailable={hazards.earthquake.dataAvailable}
         />
         <HazardRow
           hazard="landslide" label="Landslide"
           score={hazards.landslide.score} level={hazards.landslide.level}
-          source="" dataAvailable={false}
+          source={hazards.landslide.source} dataAvailable={hazards.landslide.dataAvailable}
         />
       </div>
 

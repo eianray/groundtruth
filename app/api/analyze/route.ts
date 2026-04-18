@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchFloodData } from '@/lib/hazards/flood';
+import { fetchNRIData } from '@/lib/hazards/nri';
+import { fetchCensusGeo } from '@/lib/hazards/census';
 import { calculateComposite } from '@/lib/hazards/scoring';
 import type { AnalysisResult } from '@/lib/types';
 
@@ -13,31 +15,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 });
     }
 
-    // Fetch real flood hazard data from FEMA NFHL
-    const flood = await fetchFloodData(lat, lon);
+    // Fire all hazard fetches in parallel
+    const [flood, nri, census] = await Promise.all([
+      fetchFloodData(lat, lon),
+      fetchNRIData(lat, lon),
+      fetchCensusGeo(lat, lon),
+    ]);
 
-    // Stub other 3 hazards until Chunk 4
-    const wildfire: AnalysisResult['hazards']['wildfire'] = {
-      hazard: 'wildfire', score: 1, level: 'Low', label: 'Stub', source: '', dataAvailable: false,
-    };
-    const earthquake: AnalysisResult['hazards']['earthquake'] = {
-      hazard: 'earthquake', score: 1, level: 'Low', label: 'Stub', source: '', dataAvailable: false,
-    };
-    const landslide: AnalysisResult['hazards']['landslide'] = {
-      hazard: 'landslide', score: 1, level: 'Low', label: 'Stub', source: '', dataAvailable: false,
-    };
+    const { wildfire, earthquake, landslide } = nri;
 
+    // Prefer NRI county/state; fall back to Census geocoding
+    const county = nri.county ?? census.county;
+    const state = nri.state ?? census.state;
+
+    // Equal weights for now (EAL-weighted in Chunk 4)
     const composite = calculateComposite(
       { flood, wildfire, earthquake, landslide },
-      { flood: 0, wildfire: 0, earthquake: 0, landslide: 0 },
+      { flood: 0, wildfire: 0, earthquake: 0, landslide: 0 }
     );
 
     const result: AnalysisResult = {
       coordinates: { lat, lon },
       address: address || `${lat.toFixed(4)}°N, ${Math.abs(lon).toFixed(4)}°W`,
       analyzedAt: new Date().toISOString(),
-      county: null,
-      state: null,
+      county,
+      state,
       composite,
       hazards: { flood, wildfire, earthquake, landslide },
     };
