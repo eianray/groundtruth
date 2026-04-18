@@ -1,18 +1,28 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { GeocodeResult } from '@/lib/types';
 
 interface SearchBarProps { onLocationSelect: (result: GeocodeResult) => void; }
-
-const MOCK: GeocodeResult[] = [
-  { displayName: '1 Embarcadero Center, San Francisco, CA 94111, USA', lat: '37.7941', lon: '-122.3950' },
-  { displayName: '123 SW 3rd Avenue, Miami, FL 33130, USA', lat: '25.7732', lon: '-80.1937' },
-];
 
 export default function SearchBar({ onLocationSelect }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [show, setShow] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleChange = (value: string) => {
+    setQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (value.trim().length < 3) { setResults([]); setShow(false); return; }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(value.trim())}`);
+        const data: GeocodeResult[] = await res.json();
+        setResults(data);
+        setShow(data.length > 0);
+      } catch { setResults([]); setShow(false); }
+    }, 500);
+  };
 
   return (
     <div style={{ position: 'relative' }}>
@@ -21,7 +31,7 @@ export default function SearchBar({ onLocationSelect }: SearchBarProps) {
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input
-          type="text" value={query} onChange={e => setQuery(e.target.value)}
+          type="text" value={query} onChange={e => handleChange(e.target.value)}
           onFocus={() => results.length > 0 && setShow(true)}
           onBlur={() => setTimeout(() => setShow(false), 200)}
           placeholder="Enter a US address..."

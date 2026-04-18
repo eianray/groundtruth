@@ -3,6 +3,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import SearchBar from '@/components/SearchBar';
 import RiskCard from '@/components/RiskCard';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import type { Coordinates, GeocodeResult, AnalysisResult } from '@/lib/types';
 
 const HazardMap = dynamic(() => import('@/components/HazardMap'), { ssr: false });
@@ -13,6 +14,7 @@ export default function Home() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mapError, setMapError] = useState(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -36,6 +38,25 @@ export default function Home() {
 
         <button
           disabled={!location || isLoading}
+          onClick={async () => {
+            if (!location) return;
+            setIsLoading(true);
+            setError(null);
+            try {
+              const res = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat: location.lat, lon: location.lon, address }),
+              });
+              if (!res.ok) throw new Error('Analysis failed');
+              const data = await res.json();
+              setAnalysis(data);
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'Unknown error');
+            } finally {
+              setIsLoading(false);
+            }
+          }}
           style={{
             width: '100%', padding: '12px',
             background: location && !isLoading ? 'var(--accent)' : '#cbd5e1',
@@ -63,7 +84,18 @@ export default function Home() {
 
       {/* MAP */}
       <main style={{ flex: 1, position: 'relative' }}>
-        <HazardMap location={location} onPositionChange={(lat, lon) => { setLocation({ lat, lon }); setAnalysis(null); }} />
+        {mapError ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#64748b', fontSize: '14px', height: '100%' }}>
+            Map failed to load. Refresh to try again.
+          </div>
+        ) : (
+          <ErrorBoundary fallback={<div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', color: '#64748b', fontSize: '14px', height: '100%' }}>Map failed to load. Refresh to try again.</div>}>
+            <HazardMap
+              location={location}
+              onPositionChange={(lat, lon) => { setLocation({ lat, lon }); setAnalysis(null); setMapError(false); }}
+            />
+          </ErrorBoundary>
+        )}
       </main>
     </div>
   );

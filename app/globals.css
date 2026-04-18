@@ -43,5 +43,22 @@ body {
 }
 
 @media (max-width: 640px) {
-  /* Mobile: stacked layout */
+  div[style*="display: flex"] > aside {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: 60vh !important;
+    z-index: 1000;
+    border-right: none !important;
+    border-top: 1px solid var(--border) !important;
+    overflow-y: auto !important;
+  }
+  div[style*="display: flex"] > main {
+    height: 40vh !important;
+    width: 100% !important;
+  }
 }
